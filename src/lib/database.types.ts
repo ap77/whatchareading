@@ -1,6 +1,5 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-// DNA attribute shape stored in book_dna.attributes (jsonb)
 export type DnaCategory = 'form' | 'voice' | 'content' | 'experience' | 'quirk'
 export type SurpriseLevel = 'recognizable' | 'subtle' | 'surprising'
 export type RecommendationFeedback = 'loved' | 'interested' | 'not_for_me' | 'already_read'
@@ -23,6 +22,7 @@ export interface Database {
           published_year: number | null
           description: string | null
           cover_url: string | null
+          openlibrary_key: string | null
           created_at: string
         }
         Insert: {
@@ -32,6 +32,7 @@ export interface Database {
           published_year?: number | null
           description?: string | null
           cover_url?: string | null
+          openlibrary_key?: string | null
           created_at?: string
         }
         Update: {
@@ -41,8 +42,10 @@ export interface Database {
           published_year?: number | null
           description?: string | null
           cover_url?: string | null
+          openlibrary_key?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       book_dna: {
         Row: {
@@ -66,6 +69,15 @@ export interface Database {
           generated_at?: string
           model_used?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'book_dna_book_id_fkey'
+            columns: ['book_id']
+            isOneToOne: true
+            referencedRelation: 'books'
+            referencedColumns: ['id']
+          }
+        ]
       }
       user_books: {
         Row: {
@@ -92,6 +104,22 @@ export interface Database {
           free_text?: string | null
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'user_books_book_id_fkey'
+            columns: ['book_id']
+            isOneToOne: false
+            referencedRelation: 'books'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'user_books_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
       recommendations: {
         Row: {
@@ -124,10 +152,26 @@ export interface Database {
           feedback?: RecommendationFeedback | null
           feedback_at?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: 'recommendations_recommended_book_id_fkey'
+            columns: ['recommended_book_id']
+            isOneToOne: false
+            referencedRelation: 'books'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recommendations_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
     }
-    Views: Record<string, never>
-    Functions: Record<string, never>
-    Enums: Record<string, never>
+    Views: { [_ in never]: never }
+    Functions: { [_ in never]: never }
+    Enums: { [_ in never]: never }
   }
 }
