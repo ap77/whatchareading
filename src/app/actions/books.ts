@@ -89,7 +89,7 @@ async function callClaude(prompt: string): Promise<DnaAttribute[]> {
 }
 
 export interface SaveBookInput {
-  openlibrary_key: string
+  openlibrary_key: string | null
   title: string
   author: string | null
   published_year: number | null
@@ -105,25 +105,42 @@ export async function saveBook(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  // 1. Upsert book by openlibrary_key
+  // 1. Upsert book — deduplicate by openlibrary_key when available
   let bookId: string
-  const { data: existingBook } = await supabase
-    .from('books')
-    .select('id')
-    .eq('openlibrary_key', input.openlibrary_key)
-    .maybeSingle()
 
-  if (existingBook) {
-    bookId = existingBook.id
+  if (input.openlibrary_key) {
+    const { data: existingBook } = await supabase
+      .from('books')
+      .select('id')
+      .eq('openlibrary_key', input.openlibrary_key)
+      .maybeSingle()
+
+    if (existingBook) {
+      bookId = existingBook.id
+    } else {
+      const { data: newBook, error: insertErr } = await supabase
+        .from('books')
+        .insert({
+          openlibrary_key: input.openlibrary_key,
+          title: input.title,
+          author: input.author,
+          published_year: input.published_year,
+          cover_url: input.cover_url,
+        })
+        .select('id')
+        .single()
+      if (insertErr || !newBook) return { error: 'Failed to save book' }
+      bookId = newBook.id
+    }
   } else {
+    // Manual entry — no deduplication, always insert
     const { data: newBook, error: insertErr } = await supabase
       .from('books')
       .insert({
-        openlibrary_key: input.openlibrary_key,
         title: input.title,
         author: input.author,
         published_year: input.published_year,
-        cover_url: input.cover_url,
+        cover_url: null,
       })
       .select('id')
       .single()
