@@ -11,6 +11,11 @@ export interface DnaAttribute {
   surprise_level: SurpriseLevel
 }
 
+export interface BreakdownItem {
+  book: string
+  connection: string
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -127,6 +132,7 @@ export interface Database {
           user_id: string
           recommended_book_id: string
           explanation: string
+          breakdown: BreakdownItem[] | null
           based_on_book_ids: string[]
           generated_at: string
           feedback: RecommendationFeedback | null
@@ -138,6 +144,7 @@ export interface Database {
           user_id: string
           recommended_book_id: string
           explanation: string
+          breakdown?: BreakdownItem[] | null
           based_on_book_ids: string[]
           generated_at?: string
           feedback?: RecommendationFeedback | null
@@ -149,6 +156,7 @@ export interface Database {
           user_id?: string
           recommended_book_id?: string
           explanation?: string
+          breakdown?: BreakdownItem[] | null
           based_on_book_ids?: string[]
           generated_at?: string
           feedback?: RecommendationFeedback | null

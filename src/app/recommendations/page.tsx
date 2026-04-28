@@ -1,12 +1,14 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import GenerateButton from './GenerateButton'
+import type { BreakdownItem } from '@/lib/database.types'
+import QuestionFlow from './QuestionFlow'
 import RecommendationCard from './RecommendationCard'
 
 interface RecRow {
   id: string
   explanation: string
+  breakdown: BreakdownItem[] | null
   books: {
     title: string
     author: string | null
@@ -61,7 +63,7 @@ export default async function RecommendationsPage() {
     const { data: recs } = await supabase
       .from('recommendations')
       .select(`
-        id, explanation,
+        id, explanation, breakdown,
         books ( title, author, published_year, cover_url )
       `)
       .eq('user_id', user.id)
@@ -78,26 +80,14 @@ export default async function RecommendationsPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold text-stone-900">What to read next</h1>
-      </div>
+      <h1 className="text-xl font-bold text-stone-900 mb-2">What to read next</h1>
 
       {!hasActiveRecs ? (
-        <div className="mt-8 text-center py-12">
-          <p className="text-stone-600 mb-2">
-            {latestBatch
-              ? "You've gone through all our picks."
-              : "Ready to find your next read?"}
-          </p>
+        <div className="mt-8 py-12">
           {latestBatch && (
-            <p className="text-stone-400 text-sm mb-8">Want a fresh set?</p>
+            <p className="text-stone-500 text-sm text-center mb-10">You&apos;ve gone through all our picks. Let&apos;s find a fresh set.</p>
           )}
-          {!latestBatch && (
-            <p className="text-stone-400 text-sm mb-8">
-              We&apos;ll look at the books you&apos;ve loved and find something that fits.
-            </p>
-          )}
-          <GenerateButton label="Find my next read" />
+          <QuestionFlow />
         </div>
       ) : (
         <>
@@ -117,15 +107,13 @@ export default async function RecommendationsPage() {
                 title={rec.books?.title ?? 'Unknown'}
                 author={rec.books?.author ?? null}
                 published_year={rec.books?.published_year ?? null}
+                cover_url={rec.books?.cover_url ?? null}
                 explanation={rec.explanation}
+                breakdown={rec.breakdown ?? null}
               />
             ))}
           </div>
 
-          <div className="mt-10 pt-8 border-t border-stone-100 text-center">
-            <p className="text-xs text-stone-400 mb-3">Not what you were hoping for?</p>
-            <GenerateButton label="Get fresh recommendations" />
-          </div>
         </>
       )}
 

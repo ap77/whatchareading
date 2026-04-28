@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateRecommendations } from '@/app/actions/recommendations'
 
-export default function GenerateButton({ label }: { label: string }) {
+export default function GenerateButton({ label, answers }: { label: string; answers?: Record<string, string> }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -12,13 +12,20 @@ export default function GenerateButton({ label }: { label: string }) {
   async function handleClick() {
     setIsLoading(true)
     setError(null)
-    const result = await generateRecommendations()
-    if ('error' in result) {
-      setError(result.error)
+    try {
+      const result = await generateRecommendations(answers)
+      if ('error' in result) {
+        setError(result.error)
+        setIsLoading(false)
+        return
+      }
+      router.refresh()
       setIsLoading(false)
-      return
+    } catch (e) {
+      console.error('[GenerateButton]', e)
+      setError('Something went wrong. Please try again.')
+      setIsLoading(false)
     }
-    router.refresh()
   }
 
   return (
@@ -38,7 +45,7 @@ export default function GenerateButton({ label }: { label: string }) {
         )}
       </button>
       {isLoading && (
-        <p className="text-xs text-stone-400">This takes about 15–20 seconds.</p>
+        <p className="text-xs text-stone-400">This takes about 30–40 seconds.</p>
       )}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

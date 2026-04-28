@@ -3,7 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { CLAUDE_MODEL } from '@/lib/config'
-import type { DnaAttribute } from '@/lib/database.types'
+import type { BreakdownItem, DnaAttribute } from '@/lib/database.types'
 
 const anthropic = new Anthropic()
 
@@ -19,7 +19,7 @@ interface BookContext {
   attributes: DnaAttribute[]
 }
 
-function buildPrompt(books: BookContext[], excludeTitles: string[]): string {
+function buildPrompt(books: BookContext[], excludeTitles: string[], answers?: Record<string, string>): string {
   const booksSection = books.map(b => {
     const yearStr = b.published_year ? ` (${b.published_year})` : ''
     const lines: string[] = [`**"${b.title}" by ${b.author ?? 'Unknown'}${yearStr}**`]
@@ -37,18 +37,23 @@ function buildPrompt(books: BookContext[], excludeTitles: string[]): string {
     ? `\nThey have already seen these recommendations and dismissed them — do not suggest them:\n${excludeTitles.map(t => `- "${t}"`).join('\n')}\n`
     : ''
 
+  const moodSection = answers && Object.keys(answers).length > 0
+    ? `\nThe reader has also told us what they're in the mood for right now:\n${Object.values(answers).map(v => `• ${v}`).join('\n')}\nWeight these preferences heavily when selecting and explaining recommendations.\n`
+    : ''
+
   return `Here are the books this reader has loved, with DNA analysis:
 
 ${booksSection}
-${excludeSection}
+${moodSection}${excludeSection}
 Recommend 6 books this reader would love. Requirements:
 - Real, published books only
 - Do not recommend any books already in their list above
 - Vary across genre, style, and era — don't cluster recommendations
 - For each: write 1-2 sentences explaining why this specific reader would love it, referencing at least one of their books by name and connecting specific DNA attributes to the recommendation
+- For each: provide a "breakdown" of 2-3 specific taste connections. Each connection names one of the reader's books and explains in 1-2 sentences exactly how a DNA attribute from that book maps to something in the recommendation
 
 Return strict JSON:
-{"recommendations": [{"title": "...", "author": "...", "published_year": 1985, "explanation": "..."}, ...]}`
+{"recommendations": [{"title": "...", "author": "...", "published_year": 1985, "explanation": "...", "breakdown": [{"book": "...", "connection": "..."}]}, ...]}`
 }
 
 function extractJSON(text: string): string {
@@ -62,13 +67,14 @@ interface RawRecommendation {
   author: string
   published_year: number | null
   explanation: string
+  breakdown?: BreakdownItem[]
 }
 
 async function callClaude(prompt: string): Promise<RawRecommendation[]> {
   const attempt = async () => {
     const response = await anthropic.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -88,7 +94,7 @@ async function callClaude(prompt: string): Promise<RawRecommendation[]> {
   }
 }
 
-export async function generateRecommendations(): Promise<{ error: string } | { success: true }> {
+export async function generateRecommendations(answers?: Record<string, string>): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
@@ -157,11 +163,12 @@ export async function generateRecommendations(): Promise<{ error: string } | { s
   const excludeTitles = [...new Set([...userBookTitles, ...dismissedTitles])]
 
   // 3. Call Claude
-  const prompt = buildPrompt(bookContexts, excludeTitles)
+  const prompt = buildPrompt(bookContexts, excludeTitles, answers)
   let rawRecs: RawRecommendation[]
   try {
     rawRecs = await callClaude(prompt)
-  } catch {
+  } catch (e) {
+    console.error('[generateRecommendations] Claude call failed:', e)
     return { error: "We couldn't generate recommendations right now. Please try again." }
   }
 
@@ -189,6 +196,7 @@ export async function generateRecommendations(): Promise<{ error: string } | { s
       user_id: user.id,
       recommended_book_id: bookRow.id,
       explanation: rec.explanation,
+      breakdown: rec.breakdown ?? null,
       based_on_book_ids: userBookIds,
       batch_id: batchId,
     })
