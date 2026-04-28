@@ -167,9 +167,9 @@ export async function generateRecommendations(): Promise<{ error: string } | { s
 
   // 4. Create book rows and insert recommendations
   const batchId = crypto.randomUUID()
+  let inserted = 0
 
   for (const rec of rawRecs.slice(0, 6)) {
-    // Insert book row for the recommended book
     const { data: bookRow, error: bookErr } = await supabase
       .from('books')
       .insert({
@@ -180,15 +180,28 @@ export async function generateRecommendations(): Promise<{ error: string } | { s
       .select('id')
       .single()
 
-    if (bookErr || !bookRow) continue
+    if (bookErr || !bookRow) {
+      console.error('[generateRecommendations] book insert error:', bookErr)
+      continue
+    }
 
-    await supabase.from('recommendations').insert({
+    const { error: recErr } = await supabase.from('recommendations').insert({
       user_id: user.id,
       recommended_book_id: bookRow.id,
       explanation: rec.explanation,
       based_on_book_ids: userBookIds,
       batch_id: batchId,
     })
+
+    if (recErr) {
+      console.error('[generateRecommendations] recommendation insert error:', recErr)
+    } else {
+      inserted++
+    }
+  }
+
+  if (inserted === 0) {
+    return { error: 'Failed to save recommendations — check server logs.' }
   }
 
   return { success: true }
