@@ -82,8 +82,8 @@ async function callClaude(prompt: string): Promise<DnaAttribute[]> {
 
   try {
     return await attempt()
-  } catch {
-    // One retry on parse failure
+  } catch (e) {
+    console.error('[callClaude] First attempt failed, retrying:', e)
     return await attempt()
   }
 }
@@ -176,7 +176,8 @@ export async function saveBook(
     let attributes: DnaAttribute[]
     try {
       attributes = await callClaude(prompt)
-    } catch {
+    } catch (e) {
+      console.error('[saveBook] Claude DNA generation failed:', e)
       return { error: "We couldn't analyze this book right now. Please try again." }
     }
 
