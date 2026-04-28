@@ -45,6 +45,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
+        <>
         <div className="flex flex-col gap-3">
           {books.map(ub => {
             const book = ub.books as {
@@ -86,6 +87,15 @@ export default async function DashboardPage() {
             )
           })}
         </div>
+        <div className="mt-10 pt-8 border-t border-stone-100 text-center">
+          <Link
+            href="/recommendations"
+            className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+          >
+            What should I read next? →
+          </Link>
+        </div>
+        </>
       )}
     </main>
   )
