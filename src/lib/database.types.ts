@@ -197,6 +197,7 @@ export interface Database {
           feedback: RecommendationFeedback | null
           feedback_at: string | null
           batch_id: string | null
+          dismissed_at: string | null
         }
         Insert: {
           id?: string
@@ -209,6 +210,7 @@ export interface Database {
           feedback?: RecommendationFeedback | null
           feedback_at?: string | null
           batch_id?: string | null
+          dismissed_at?: string | null
         }
         Update: {
           id?: string
@@ -221,6 +223,7 @@ export interface Database {
           feedback?: RecommendationFeedback | null
           feedback_at?: string | null
           batch_id?: string | null
+          dismissed_at?: string | null
         }
         Relationships: [
           {

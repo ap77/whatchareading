@@ -160,7 +160,22 @@ export async function generateRecommendations(answers?: Record<string, string>):
     }
   }
 
-  const excludeTitles = [...new Set([...userBookTitles, ...dismissedTitles])]
+  // 2b. Fetch satchel book titles (don't re-recommend something the user is already considering)
+  const { data: satcheled } = await supabase
+    .from('satchel_items')
+    .select(`recommendations ( books ( title ) )`)
+    .eq('user_id', user.id)
+
+  const satcheledTitles: string[] = []
+  if (satcheled) {
+    for (const s of satcheled) {
+      const rec = s.recommendations as { books: { title: string } | null } | null
+      const title = rec?.books?.title
+      if (title) satcheledTitles.push(title)
+    }
+  }
+
+  const excludeTitles = [...new Set([...userBookTitles, ...dismissedTitles, ...satcheledTitles])]
 
   // 3. Call Claude
   const prompt = buildPrompt(bookContexts, excludeTitles, answers)
@@ -217,6 +232,25 @@ export async function generateRecommendations(answers?: Record<string, string>):
     .from('user_profiles')
     .upsert({ user_id: user.id, recommendations_stale: false }, { onConflict: 'user_id' })
 
+  return { success: true }
+}
+
+export async function skipRecommendation(id: string): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('recommendations')
+    .update({
+      dismissed_at: new Date().toISOString(),
+      feedback: 'not_for_me',
+      feedback_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: 'Failed to skip recommendation' }
   return { success: true }
 }
 
