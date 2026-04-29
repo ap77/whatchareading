@@ -17,7 +17,6 @@ export async function saveToSatchel(recommendationId: string): Promise<{ error: 
     return { error: 'Failed to save to satchel' }
   }
 
-  revalidatePath('/satchel')
   return { success: true }
 }
 

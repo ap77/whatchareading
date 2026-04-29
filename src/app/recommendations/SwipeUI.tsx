@@ -147,7 +147,12 @@ export default function SwipeUI({ recs }: { recs: SwipeRec[] }) {
     )
   }
 
-  // phase === 'swiping' — rec is always defined here
+  // phase === 'swiping' — guard against recs shrinking under us (e.g. RSC re-render)
+  if (currentIndex >= recs.length) {
+    setPhase('done')
+    return null
+  }
+
   return (
     <div>
       <p className="text-sm text-stone-500 mb-6 leading-relaxed">
