@@ -30,19 +30,24 @@ export default async function RootLayout({
             <Link href="/" className="text-sm font-semibold text-stone-800 tracking-wide hover:text-stone-600 transition-colors">
               whatcha reading
             </Link>
-            {user && (
-              <nav className="flex items-center gap-5">
-                <Link href="/dashboard" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="/recommendations" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
-                  Recommendations
-                </Link>
-                <Link href="/satchel" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
-                  My Satchel
-                </Link>
-              </nav>
-            )}
+            <nav className="flex items-center gap-5">
+              <Link href="/how-it-works" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
+                How it works
+              </Link>
+              {user && (
+                <>
+                  <Link href="/dashboard" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
+                    Dashboard
+                  </Link>
+                  <Link href="/recommendations" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
+                    Recommendations
+                  </Link>
+                  <Link href="/satchel" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
+                    My Satchel
+                  </Link>
+                </>
+              )}
+            </nav>
           </div>
         </header>
         {children}
