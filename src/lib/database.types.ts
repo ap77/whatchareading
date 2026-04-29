@@ -130,14 +130,17 @@ export interface Database {
         Row: {
           user_id: string
           recommendations_stale: boolean
+          onboarding_dismissed_at: string | null
         }
         Insert: {
           user_id: string
           recommendations_stale?: boolean
+          onboarding_dismissed_at?: string | null
         }
         Update: {
           user_id?: string
           recommendations_stale?: boolean
+          onboarding_dismissed_at?: string | null
         }
         Relationships: [
           {

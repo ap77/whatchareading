@@ -1,11 +1,20 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import OnboardingCards from './OnboardingCards'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('onboarding_dismissed_at')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const showOnboarding = !profile?.onboarding_dismissed_at
 
   const { data: userBooks } = await supabase
     .from('user_books')
@@ -23,6 +32,8 @@ export default async function DashboardPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-10">
+      {showOnboarding && <OnboardingCards />}
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-xl font-bold text-stone-900">Your books</h1>
         <Link
