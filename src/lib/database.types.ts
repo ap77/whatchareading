@@ -126,6 +126,42 @@ export interface Database {
           }
         ]
       }
+      satchel_items: {
+        Row: {
+          id: string
+          user_id: string
+          recommendation_id: string
+          saved_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recommendation_id: string
+          saved_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          recommendation_id?: string
+          saved_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'satchel_items_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'satchel_items_recommendation_id_fkey'
+            columns: ['recommendation_id']
+            isOneToOne: false
+            referencedRelation: 'recommendations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       recommendations: {
         Row: {
           id: string
