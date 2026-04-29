@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateRecommendations } from '@/app/actions/recommendations'
 
-export default function GenerateButton({ label, answers }: { label: string; answers?: Record<string, string> }) {
+export default function GenerateButton({ label, answers, onSuccess }: { label: string; answers?: Record<string, string>; onSuccess?: () => void }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -19,6 +19,7 @@ export default function GenerateButton({ label, answers }: { label: string; answ
         setIsLoading(false)
         return
       }
+      onSuccess?.()
       router.refresh()
       setIsLoading(false)
     } catch (e) {

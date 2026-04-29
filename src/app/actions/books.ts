@@ -201,5 +201,11 @@ export async function saveBook(
     .single()
 
   if (userBookErr || !userBook) return { error: 'Failed to save your book entry' }
+
+  // Mark recommendations stale — new book means fresh picks are warranted
+  await supabase
+    .from('user_profiles')
+    .upsert({ user_id: user.id, recommendations_stale: true }, { onConflict: 'user_id' })
+
   return { userBookId: userBook.id }
 }

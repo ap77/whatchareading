@@ -126,6 +126,29 @@ export interface Database {
           }
         ]
       }
+      user_profiles: {
+        Row: {
+          user_id: string
+          recommendations_stale: boolean
+        }
+        Insert: {
+          user_id: string
+          recommendations_stale?: boolean
+        }
+        Update: {
+          user_id?: string
+          recommendations_stale?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_profiles_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       satchel_items: {
         Row: {
           id: string

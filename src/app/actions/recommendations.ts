@@ -212,6 +212,11 @@ export async function generateRecommendations(answers?: Record<string, string>):
     return { error: 'Failed to save recommendations — check server logs.' }
   }
 
+  // Clear staleness flag — fresh batch replaces stale signal
+  await supabase
+    .from('user_profiles')
+    .upsert({ user_id: user.id, recommendations_stale: false }, { onConflict: 'user_id' })
+
   return { success: true }
 }
 

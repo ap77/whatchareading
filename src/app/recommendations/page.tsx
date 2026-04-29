@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { BreakdownItem } from '@/lib/database.types'
 import QuestionFlow from './QuestionFlow'
 import RecommendationCard from './RecommendationCard'
+import StalenessBanner from './StalenessBanner'
 
 interface RecRow {
   id: string
@@ -22,7 +23,6 @@ export default async function RecommendationsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // How many books does the user have?
   const { count: bookCount } = await supabase
     .from('user_books')
     .select('id', { count: 'exact', head: true })
@@ -75,6 +75,15 @@ export default async function RecommendationsPage() {
     remainingInBatch = activeRecs.length
   }
 
+  // Check staleness flag — only matters when there are recs to show
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('recommendations_stale')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const isStale = profile?.recommendations_stale ?? false
+
   const hasActiveRecs = activeRecs.length > 0
   const visibleRecs = activeRecs.slice(0, 3)
 
@@ -91,6 +100,8 @@ export default async function RecommendationsPage() {
         </div>
       ) : (
         <>
+          <StalenessBanner isStale={isStale} />
+
           <p className="text-sm text-stone-400 mb-8">
             {remainingInBatch > 3
               ? `Showing 3 of ${remainingInBatch} picks — dismiss any to see the next one.`
@@ -113,7 +124,6 @@ export default async function RecommendationsPage() {
               />
             ))}
           </div>
-
         </>
       )}
 
