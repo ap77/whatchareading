@@ -6,6 +6,7 @@ import QuestionFlow from './QuestionFlow'
 import StalenessBanner from './StalenessBanner'
 import SwipeUI from './SwipeUI'
 import type { SwipeRec } from './SwipeUI'
+import NoRecsState from './NoRecsState'
 
 interface RecRow {
   id: string
@@ -47,12 +48,16 @@ export default async function RecommendationsPage() {
     )
   }
 
-  // Find the latest batch
+  // Find the latest batch that still has pending recs (feedback IS NULL).
+  // Without this filter, a fully-dismissed batch would be returned and its
+  // batch_id would scope the next query to zero results, showing the empty state
+  // even when older batches have pending recommendations.
   const { data: latestBatch } = await supabase
     .from('recommendations')
     .select('batch_id')
     .eq('user_id', user.id)
     .not('batch_id', 'is', null)
+    .is('feedback', null)
     .order('generated_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -119,18 +124,9 @@ export default async function RecommendationsPage() {
           <SwipeUI recs={swipeRecs} />
         </>
       ) : latestBatch ? (
-        // Scenario 2: existing user, all recs processed — go add more signal, no QuestionFlow
-        <div className="mt-4">
-          <p className="text-stone-500 mb-6">
-            We&apos;re out of new recommendations right now. Try adding more books you&apos;ve loved — we&apos;ll find fresher options.
-          </p>
-          <Link
-            href="/books/new"
-            className="inline-block rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-amber-50 hover:bg-stone-700 transition-colors"
-          >
-            Add a book
-          </Link>
-        </div>
+        // Scenario 2: pending batch exists but all its recs are in the satchel.
+        // Offer to generate more or add a book.
+        <NoRecsState />
       ) : (
         // Scenario 1: first-time user with books but no recs yet — go straight to QuestionFlow
         <div className="mt-8 py-12">
